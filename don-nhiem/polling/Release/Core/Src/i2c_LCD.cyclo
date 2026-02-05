@@ -1,8 +1,0 @@
-../Core/Src/i2c_LCD.c:11:13:pcf_write	1
-../Core/Src/i2c_LCD.c:26:13:lcd_write4	1
-../Core/Src/i2c_LCD.c:41:13:lcd_cmd	2
-../Core/Src/i2c_LCD.c:52:6:LCD1602_Backlight	1
-../Core/Src/i2c_LCD.c:58:6:LCD1602_Init	1
-../Core/Src/i2c_LCD.c:82:6:LCD1602_Clear	1
-../Core/Src/i2c_LCD.c:87:6:LCD1602_SetCursor	2
-../Core/Src/i2c_LCD.c:94:6:LCD1602_Print	2

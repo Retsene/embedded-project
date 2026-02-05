@@ -1,3 +1,0 @@
-../Core/Src/time_delay.c:12:6:TIM2_Delay_Init	16	static
-../Core/Src/time_delay.c:18:10:micros	4	static
-../Core/Src/time_delay.c:23:6:delay_us	24	static
