@@ -1,16 +1,4 @@
-/******************************************************************************************************************
-@File:  	CLCD I2C Chip PCF8574
-@Author:  Khue Nguyen
-@Website: khuenguyencreator.com
-@Youtube: https://www.youtube.com/channel/UCt8cFnPOaHrQXWmVkk-lfvg
-Huong dan su dung:
-- Su dung thu vien HAL
-- Khoi tao bien LCD: CLCD_I2C_Name LCD1;
-- Khoi tao LCD do: CLCD_I2C_Init(&LCD1,&hi2c1,0x4e,20,4);
-- Su dung cac ham phai truyen dia chi cua LCD do:
-CLCD_I2C_SetCursor(&LCD1, 0, 1);
-CLCD_I2C_WriteString(&LCD1,"hello anh em ");
-******************************************************************************************************************/
+
 #include "CLCD_I2C.h"
 
 //************************** Low Level Function ****************************************************************//
