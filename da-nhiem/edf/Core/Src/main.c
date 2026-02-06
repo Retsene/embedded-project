@@ -195,7 +195,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
+  // HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -558,7 +558,7 @@ uint8_t DHT11_Read_Data(uint8_t *temp, uint8_t *hum) {
   {
     *hum  = data[0]; // Byte 0: Độ ẩm phần nguyên
     *temp = data[2]; // Byte 2: Nhiệt độ phần nguyên
-    // Bỏ qua data[1] và data[3] (phần thập phân)
+
     return 1;
   }
   return 0;
@@ -722,41 +722,63 @@ void StartTaskWarning(void *argument)
 void StartTaskRxUart(void *argument)
 {
   /* USER CODE BEGIN StartTaskRxUart */
-  char msg[50];
+  uint8_t rxChar = 0;
+  char rxBuffer[50] = {0}; // Increased size for longer commands
+  uint8_t index = 0;
 
+  char msg[64]; // Buffer for sending response back
+
+  /* Infinite loop */
   for(;;)
   {
-    // Chờ ngắt báo hiệu là đã có lệnh mới (biến flag lên 1)
-    if (cmd_received_flag == 1)
+    // Wait for a character (Blocking mode)
+    if (HAL_UART_Receive(&huart1, &rxChar, 1, HAL_MAX_DELAY) == HAL_OK)
     {
-      // Kiểm tra xem trong buffer có số '1' không
-      // (Duyệt qua buffer hoặc chỉ check ký tự đầu tiên)
-      if (rx_buffer[0] == '1')
+      // Check for Newline (Enter key)
+      if (rxChar == '\r' || rxChar == '\n')
       {
-        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); // Đảo đèn
-        sprintf(msg, ">> [RTOS] LED TOGGLED!\r\n");
+        if (index > 0)
+        {
+          rxBuffer[index] = '\0'; // Null-terminate the string so sscanf can read it
+
+          int new_t = 0;
+          int new_h = 0;
+
+          if (sscanf(rxBuffer, "Set T=%d H=%d", &new_t, &new_h) == 2)
+          {
+            // Update Global Variables safely with Mutex
+            if (osMutexWait(dataMutexHandle, osWaitForever) == osOK)
+            {
+              sysData.limit_temp = (uint8_t)new_t;
+              sysData.limit_hum  = (uint8_t)new_h;
+              osMutexRelease(dataMutexHandle);
+            }
+
+            // Send confirmation
+            sprintf(msg, " Limit Updated: T=%d H=%d\r\n", new_t, new_h);
+            HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+          }
+          else
+          {
+            HAL_UART_Transmit(&huart1, (uint8_t*)"Syntax Error. Use: Set T=xx H=yy\r\n", 34, 100);
+          }
+
+          // Reset buffer for next command
+          index = 0;
+          memset(rxBuffer, 0, sizeof(rxBuffer));
+        }
       }
       else
       {
-        sprintf(msg, ">> [RTOS] Unknown CMD. Press '1'\r\n");
+        // Add character to buffer if space allows
+        if (index < sizeof(rxBuffer) - 1)
+        {
+          rxBuffer[index++] = rxChar;
+        }
       }
-
-      // Gửi phản hồi
-      if (osMutexWait(uartMutexHandle, osWaitForever) == osOK)
-      {
-        HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
-        osMutexRelease(uartMutexHandle); // Dùng xong phải nhả ngay
-      }
-
-      // Reset hệ thống nhận lệnh
-      cmd_received_flag = 0;           // Hạ cờ xuống
-      memset(rx_buffer, 0, RX_BUFF_SIZE); // Xóa sạch buffer cũ
-      rx_indx = 0;                     // Reset con trỏ về 0
     }
-
-    // Delay ngắn (10ms) để nhường CPU cho các Task khác
-    osDelay(10);
   }
+  osDelay(1000);
 }
 
 /* USER CODE BEGIN Header_StartTaskTxUart */
@@ -836,7 +858,7 @@ void StartTaskLcd(void *argument)
     // 3. HIEN THI
     // Format: "Temp: 28 Hum: 80"
     // Them khoang trang o cuoi de xoa ky tu thua neu so bi giam (vd 100 -> 99)
-    sprintf(lcd_line1, "Temp:%d Hum:%d  ", t, h);
+    sprintf(lcd_line1, "Temp:%d Hum:%d", t, h);
 
     // Ghi len Hang 1 (Trong thu vien nay quy dinh: X=Cot, Y=Hang)
     CLCD_I2C_SetCursor(&LCD1, 0, 0);
