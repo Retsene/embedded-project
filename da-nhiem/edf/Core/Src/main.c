@@ -564,27 +564,6 @@ uint8_t DHT11_Read_Data(uint8_t *temp, uint8_t *hum) {
   return 0;
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-  if (huart->Instance == USART1)
-  {
-    // Nếu gặp ký tự xuống dòng (\n hoặc \r) -> Chốt lệnh
-    if (rx_byte == '\n' || rx_byte == '\r')
-    {
-      cmd_received_flag = 1; // Bật cờ báo cho Task biết
-      // Không cần xóa buffer ở đây, để Task tự xử lý
-    }
-    else
-    {
-      // Lưu ký tự vào buffer
-      if (rx_indx < RX_BUFF_SIZE - 1) {
-        rx_buffer[rx_indx++] = rx_byte; // Lưu vào biến toàn cục rx_buffer
-      }
-    }
-    // Tiếp tục lắng nghe ký tự tiếp theo
-    HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-  }
-}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartEdfManager */
@@ -936,3 +915,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
