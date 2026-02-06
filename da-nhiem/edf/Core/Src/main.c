@@ -758,10 +758,21 @@ void StartTaskRxUart(void *argument)
             sprintf(msg, " Limit Updated: T=%d H=%d\r\n", new_t, new_h);
             HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
           }
-          else
+
+          if (sscanf(rxBuffer, "Set ID=%d P=%d", &new_t, &new_h) == 2)
           {
-            HAL_UART_Transmit(&huart1, (uint8_t*)"Syntax Error. Use: Set T=xx H=yy\r\n", 34, 100);
+            // Update Global Variables safely with Mutex
+            if (osMutexWait(dataMutexHandle, osWaitForever) == osOK)
+            {
+              taskList[new_t].period = (uint32_t)new_h;
+              osMutexRelease(dataMutexHandle);
+            }
+
+            // Send confirmation
+            sprintf(msg, " Task %d Period Update: %d\r\n", new_t, new_h);
+            HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
           }
+
 
           // Reset buffer for next command
           index = 0;
